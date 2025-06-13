@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 シューティング99 🎯</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shine 3s linear infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        h1 {
+            color: #ff6b6b;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        .mode-selection, .game-area, .shooting-game, .bonus-start {
+            display: none;
+        }
+
+        .mode-selection.active, .game-area.active, .shooting-game.active, .bonus-start.active {
+            display: block;
+        }
+
+        .mode-description {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #4ecdc4;
+        }
+
+        .mode-description h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .mode-description p {
+            color: #666;
+            font-size: 1em;
+            line-height: 1.5;
+        }
+
+        .bonus-info {
+            background: linear-gradient(45deg, #feca57, #ff9ff3);
+            color: white;
+            padding: 15px;
+            border-radius: 15px;
+            margin: 15px 0;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .mode-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            margin: 15px;
+            border-radius: 25px;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 25px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, #ff8e8e, #ffb3b3);
+        }
+
+        .mode-btn.random {
+            background: linear-gradient(45deg, #4ecdc4, #7dd3c0);
+        }
+
+        .mode-btn.random:hover {
+            background: linear-gradient(45deg, #7dd3c0, #a8e6cf);
+        }
+
+        .start-bonus-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            color: white;
+            border: none;
+            padding: 25px 50px;
+            margin: 20px;
+            border-radius: 30px;
+            font-size: 1.5em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .start-bonus-btn:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            background: linear-gradient(45deg, #ff8e8e, #ffb3b3);
+        }
+
+        .question {
+            font-size: 3em;
+            color: #333;
+            margin: 30px 0;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .input-area {
+            margin: 30px 0;
+        }
+
+        .answer-input {
+            font-size: 2em;
+            padding: 15px;
+            border: 3px solid #4ecdc4;
+            border-radius: 15px;
+            text-align: center;
+            width: 200px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .answer-input:focus {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .submit-btn {
+            background: linear-gradient(45deg, #45b7d1, #6bb6ff);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            margin-left: 15px;
+            border-radius: 15px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            transform: scale(1.1);
+            background: linear-gradient(45deg, #6bb6ff, #89c4ff);
+        }
+
+        .feedback {
+            font-size: 1.5em;
+            margin: 20px 0;
+            font-weight: bold;
+            min-height: 40px;
+        }
+
+        .correct {
+            color: #27ae60;
+            animation: celebrate 0.8s ease-in-out;
+        }
+
+        .incorrect {
+            color: #e74c3c;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes celebrate {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.2) rotate(-5deg); }
+            75% { transform: scale(1.2) rotate(5deg); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .progress {
+            background: #ecf0f1;
+            border-radius: 15px;
+            height: 20px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(45deg, #96ceb4, #a8e6cf);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 15px;
+        }
+
+        .shooting-area {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(to bottom, #87ceeb, #98fb98);
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .player {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            background: #ff6b6b;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: left 0.1s ease;
+        }
+
+        .falling-number {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(45deg, #feca57, #ff9ff3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .bullet {
+            position: absolute;
+            width: 8px;
+            height: 15px;
+            background: #ff6b6b;
+            border-radius: 4px;
+        }
+
+        .score {
+            font-size: 1.5em;
+            color: #333;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .timer {
+            font-size: 1.3em;
+            color: #ff6b6b;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .game-instructions {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 2px solid #4ecdc4;
+            font-size: 1em;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .controls-info {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .bonus-ready {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px 0;
+            border: 3px solid #ff6b6b;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 107, 107, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(255, 107, 107, 0.6); }
+        }
+
+        .back-btn {
+            background: linear-gradient(45deg, #95a5a6, #bdc3c7);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    
+    <div class="container">
+        <h1>🎯 シューティング99 🎯</h1>
+        
+        <!-- モード選択画面 -->
+        <div class="mode-selection active" id="modeSelection">
+            <p style="font-size: 1.2em; margin-bottom: 30px; color: #666;">どのモードで遊ぶ？</p>
+            
+            <div class="mode-description">
+                <h3>📚 順番モード</h3>
+                <p>ランダムに選ばれた段の×1から×9まで順番に出題されます。全問正解でクリア！</p>
+            </div>
+            
+            <div class="mode-description">
+                <h3>🎲 ランダムモード</h3>
+                <p>ランダムに選ばれた段（2～9の段）の×1～×9がランダムな順序で出題されます。全問正解でクリア！</p>
+            </div>
+            
+            <div class="bonus-info">
+                🎯 ランダムモードでクリアするとボーナスゲームがあるよ！
+            </div>
+            
+            <button class="mode-btn" onclick="startGame('sequential')">📚 順番モード</button>
+            <button class="mode-btn random" onclick="startGame('random')">🎲 ランダムモード</button>
+        </div>
+
+        <!-- ゲーム画面 -->
+        <div class="game-area" id="gameArea">
+            <div class="question" id="question">1 × 1 = ?</div>
+            <div class="input-area">
+                <input type="number" class="answer-input" id="answerInput" placeholder="答え">
+                <button class="submit-btn" onclick="checkAnswer()">答える！</button>
+            </div>
+            <div class="feedback" id="feedback"></div>
+            <div class="progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <p id="progressText">問題 1 / 9</p>
+            <button class="back-btn" onclick="goHome()">🏠 ホームに戻る</button>
+        </div>
+
+        <!-- ボーナスゲーム開始画面 -->
+        <div class="bonus-start" id="bonusStart">
+            <h2>🎉 おめでとう！</h2>
+            <div class="bonus-ready">
+                <h3>ボーナスゲーム準備完了！</h3>
+                <div class="game-instructions" id="bonusInstructions">
+                    <!-- ここに詳細な説明が入ります -->
+                </div>
+                <p style="margin: 20px 0; font-size: 1.1em; color: #666;">
+                    準備はいいかな？ボタンを押してゲームを開始しよう！
+                </p>
+                <button class="start-bonus-btn" onclick="startBonusGame()">
+                    🚀 ボーナスゲーム開始！
+                </button>
+            </div>
+            <button class="back-btn" onclick="goHome()">🏠 ホームに戻る</button>
+        </div>
+
+        <!-- シューティングゲーム -->
+        <div class="shooting-game" id="shootingGame">
+            <h2>🎯 ボーナスゲーム！</h2>
+            <div class="game-instructions" id="gameInstructions">
+                <!-- ここに詳細な説明が入ります -->
+            </div>
+            <div class="controls-info">
+                移動: ←→キー または タッチ | 発射: スペース または エンター
+            </div>
+            <div class="timer" id="gameTimer">残り時間: 30秒</div>
+            <div class="score" id="gameScore">スコア: 0</div>
+            <div class="shooting-area" id="shootingArea">
+                <div class="player" id="player"></div>
+            </div>
+            <button class="back-btn" onclick="goHome()">🏠 ホームに戻る</button>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = '';
+        let currentTable = 1;
+        let currentQuestion = 1;
+        let correctAnswers = 0;
+        let totalQuestions = 9;
+        let randomQuestions = [];
+        let gameScore = 0;
+        let targetNumbers = [];
+        let hitTargets = [];
+        let gameInterval;
+        let gameTimer;
+        let timeRemaining = 30;
+        let bulletSpeed = 5;
+        let numberSpeed = 1.8; // 10%遅く設定
+        let playerPosition = 50; // プレイヤーの位置（パーセント）
+        let keys = {}; // キー入力状態を管理
+
+        // 星の背景を生成
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 50; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = star.style.height = Math.random() * 3 + 1 + 'px';
+                star.style.animationDelay = Math.random() * 2 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // ゲーム開始
+        function startGame(mode) {
+            currentMode = mode;
+            document.getElementById('modeSelection').classList.remove('active');
+            document.getElementById('gameArea').classList.add('active');
+            
+            if (mode === 'sequential') {
+                currentTable = Math.floor(Math.random() * 9) + 1;
+                currentQuestion = 1;
+                totalQuestions = 9;
+            } else {
+                // ランダムモードは2～9の段のみ（1の段を除く）
+                currentTable = Math.floor(Math.random() * 8) + 2;
+                generateRandomQuestions();
+                currentQuestion = 0;
+                totalQuestions = 9;
+            }
+            
+            correctAnswers = 0;
+            updateQuestion();
+            updateProgress();
+        }
+
+        // ランダム問題生成
+        function generateRandomQuestions() {
+            randomQuestions = [];
+            for (let i = 1; i <= 9; i++) {
+                randomQuestions.push(i);
+            }
+            // シャッフル
+            for (let i = randomQuestions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [randomQuestions[i], randomQuestions[j]] = [randomQuestions[j], randomQuestions[i]];
+            }
+        }
+
+        // 乗数を取得（エラー修正）
+        function getMultiplier() {
+            if (currentMode === 'sequential') {
+                if (currentQuestion >= 1 && currentQuestion <= 9) {
+                    return currentQuestion;
+                }
+            } else if (currentMode === 'random') {
+                if (currentQuestion >= 0 && currentQuestion < randomQuestions.length) {
+                    return randomQuestions[currentQuestion];
+                }
+            }
+            return null;
+        }
+
+        // 問題更新
+        function updateQuestion() {
+            const questionElement = document.getElementById('question');
+            const multiplier = getMultiplier();
+            
+            if (multiplier === null) {
+                endGame();
+                return;
+            }
+            
+            questionElement.textContent = `${currentTable} × ${multiplier} = ?`;
+            document.getElementById('answerInput').value = '';
+            document.getElementById('answerInput').focus();
+        }
+
+        // 答えをチェック
+        function checkAnswer() {
+            const userAnswer = parseInt(document.getElementById('answerInput').value);
+            const multiplier = getMultiplier();
+            
+            if (multiplier === null || isNaN(userAnswer)) {
+                return;
+            }
+            
+            const correctAnswer = currentTable * multiplier;
+            const feedbackElement = document.getElementById('feedback');
+            
+            if (userAnswer === correctAnswer) {
+                correctAnswers++;
+                feedbackElement.textContent = '🎉 正解！すごいね！';
+                feedbackElement.className = 'feedback correct';
+                
+                setTimeout(() => {
+                    nextQuestion();
+                }, 1500);
+            } else {
+                feedbackElement.textContent = `❌ 残念！正解は ${correctAnswer} だよ`;
+                feedbackElement.className = 'feedback incorrect';
+                
+                setTimeout(() => {
+                    nextQuestion();
+                }, 2000);
+            }
+        }
+
+        // 次の問題
+        function nextQuestion() {
+            if (currentMode === 'sequential') {
+                currentQuestion++;
+            } else {
+                currentQuestion++;
+            }
+            
+            if ((currentMode === 'sequential' && currentQuestion > totalQuestions) ||
+                (currentMode === 'random' && currentQuestion >= totalQuestions)) {
+                endGame();
+            } else {
+                updateQuestion();
+                updateProgress();
+                document.getElementById('feedback').textContent = '';
+                document.getElementById('feedback').className = 'feedback';
+            }
+        }
+
+        // 進捗更新
+        function updateProgress() {
+            let progress;
+            if (currentMode === 'sequential') {
+                progress = (currentQuestion - 1) / totalQuestions * 100;
+                document.getElementById('progressText').textContent = `問題 ${currentQuestion} / ${totalQuestions}`;
+            } else {
+                progress = currentQuestion / totalQuestions * 100;
+                document.getElementById('progressText').textContent = `問題 ${currentQuestion + 1} / ${totalQuestions}`;
+            }
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        // ゲーム終了
+        function endGame() {
+            if (correctAnswers === totalQuestions && currentMode === 'random') {
+                showBonusStart();
+            } else {
+                alert(`ゲーム終了！\n正解数: ${correctAnswers} / ${totalQuestions}`);
+                goHome();
+            }
+        }
+
+        // ボーナスゲーム開始画面を表示
+        function showBonusStart() {
+            document.getElementById('gameArea').classList.remove('active');
+            document.getElementById('bonusStart').classList.add('active');
+            
+            // ターゲット数字を生成（選んだ段の答え）
+            targetNumbers = [];
+            for (let i = 1; i <= 9; i++) {
+                targetNumbers.push(currentTable * i);
+            }
+            
+            // 詳細な説明を表示
+            const instructionsElement = document.getElementById('bonusInstructions');
+            instructionsElement.innerHTML = `
+                <strong>${currentTable}の段の数字にあてると100点、その段のすべての数字をあてるとボーナスでさらに100点入るよ。<br>
+                ${currentTable}の段以外の数字にあてるとマイナス10点だよ</strong><br><br>
+                <span style="color: #666;">制限時間は30秒です。準備ができたらボタンを押してください！</span>
+            `;
+        }
+
+        // ボーナスゲーム開始
+        function startBonusGame() {
+            document.getElementById('bonusStart').classList.remove('active');
+            document.getElementById('shootingGame').classList.add('active');
+            
+            gameScore = 0;
+            hitTargets = [];
+            timeRemaining = 30;
+            playerPosition = 50;
+            
+            // 詳細な説明を表示
+            const instructionsElement = document.getElementById('gameInstructions');
+            instructionsElement.innerHTML = `
+                <strong>${currentTable}の段の数字にあてると100点、その段のすべての数字をあてるとボーナスでさらに100点入るよ。<br>
+                ${currentTable}の段以外の数字にあてるとマイナス10点だよ</strong>
+            `;
+            
+            updateGameScore();
+            updateTimer();
+            updatePlayerPosition();
+            startFallingNumbers();
+            setupShooting();
+            
+            // 30秒でゲーム終了
+            gameTimer = setInterval(() => {
+                timeRemaining--;
+                updateTimer();
+                if (timeRemaining <= 0) {
+                    endShootingGame();
+                }
+            }, 1000);
+        }
+
+        // プレイヤーの位置を更新
+        function updatePlayerPosition() {
+            const player = document.getElementById('player');
+            const shootingArea = document.getElementById('shootingArea');
+            const maxLeft = shootingArea.offsetWidth - 40;
+            const leftPos = (playerPosition / 100) * maxLeft;
+            player.style.left = leftPos + 'px';
+        }
+
+        // タイマー更新
+        function updateTimer() {
+            document.getElementById('gameTimer').textContent = `残り時間: ${timeRemaining}秒`;
+        }
+
+        // 落下する数字を開始
+        function startFallingNumbers() {
+            let targetIndex = 0;
+            let targetInterval = 30000 / 9; // 30秒で9個のターゲットを確実に出現
+            
+            gameInterval = setInterval(() => {
+                createFallingNumber();
+            }, 800);
+            
+            // ターゲット数字を確実に出現させる
+            const targetTimer = setInterval(() => {
+                if (targetIndex < targetNumbers.length && timeRemaining > 0) {
+                    createTargetNumber(targetNumbers[targetIndex]);
+                    targetIndex++;
+                } else {
+                    clearInterval(targetTimer);
+                }
+            }, targetInterval);
+        }
+
+        // 通常の落下する数字を作成
+        function createFallingNumber() {
+            if (timeRemaining <= 0) return;
+            
+            const shootingArea = document.getElementById('shootingArea');
+            const number = document.createElement('div');
+            number.className = 'falling-number';
+            
+            // 1-81のランダムな数字（ターゲット以外）
+            let randomNum;
+            do {
+                randomNum = Math.floor(Math.random() * 81) + 1;
+            } while (targetNumbers.includes(randomNum));
+            
+            number.textContent = randomNum;
+            number.dataset.value = randomNum;
+            
+            // すべて同じレイアウト
+            number.style.left = Math.random() * (shootingArea.offsetWidth - 30) + 'px';
+            number.style.top = '0px';
+            
+            shootingArea.appendChild(number);
+            animateFallingNumber(number);
+        }
+
+        // ターゲット数字を作成
+        function createTargetNumber(targetNum) {
+            if (timeRemaining <= 0) return;
+            
+            const shootingArea = document.getElementById('shootingArea');
+            const number = document.createElement('div');
+            number.className = 'falling-number';
+            number.textContent = targetNum;
+            number.dataset.value = targetNum;
+            
+            // すべて同じレイアウト
+            number.style.left = Math.random() * (shootingArea.offsetWidth - 30) + 'px';
+            number.style.top = '0px';
+            
+            shootingArea.appendChild(number);
+            animateFallingNumber(number);
+        }
+
+        // 数字の落下アニメーション
+        function animateFallingNumber(number) {
+            const fallInterval = setInterval(() => {
+                const currentTop = parseInt(number.style.top);
+                const shootingArea = document.getElementById('shootingArea');
+                
+                if (currentTop > shootingArea.offsetHeight || timeRemaining <= 0) {
+                    if (number.parentNode) {
+                        number.remove();
+                    }
+                    clearInterval(fallInterval);
+                } else {
+                    number.style.top = (currentTop + numberSpeed) + 'px';
+                }
+            }, 20);
+        }
+
+        // 射撃システム設定
+        function setupShooting() {
+            const shootingArea = document.getElementById('shootingArea');
+            
+            // タッチイベント
+            let touchStartX = 0;
+            
+            shootingArea.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                touchStartX = e.touches[0].clientX;
+                const rect = shootingArea.getBoundingClientRect();
+                const x = e.touches[0].clientX - rect.left;
+                playerPosition = Math.max(0, Math.min(100, (x / shootingArea.offsetWidth) * 100));
+                updatePlayerPosition();
+            });
+            
+            shootingArea.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const rect = shootingArea.getBoundingClientRect();
+                const x = e.touches[0].clientX - rect.left;
+                playerPosition = Math.max(0, Math.min(100, (x / shootingArea.offsetWidth) * 100));
+                updatePlayerPosition();
+            });
+            
+            shootingArea.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                fireBullet();
+            });
+            
+            // マウスイベント（既存）
+            shootingArea.addEventListener('mousemove', (e) => {
+                const rect = shootingArea.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                playerPosition = Math.max(0, Math.min(100, (x / shootingArea.offsetWidth) * 100));
+                updatePlayerPosition();
+            });
+            
+            shootingArea.addEventListener('click', (e) => {
+                if (timeRemaining > 0) {
+                    fireBullet();
+                }
+            });
+            
+            // キー移動の処理
+            const moveInterval = setInterval(() => {
+                if (timeRemaining <= 0) {
+                    clearInterval(moveInterval);
+                    return;
+                }
+                
+                if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
+                    playerPosition = Math.max(0, playerPosition - 2);
+                    updatePlayerPosition();
+                }
+                if (keys['ArrowRight'] || keys['d'] || keys['D']) {
+                    playerPosition = Math.min(100, playerPosition + 2);
+                    updatePlayerPosition();
+                }
+            }, 16); // 60FPS
+        }
+
+        // 弾を発射
+        function fireBullet() {
+            const shootingArea = document.getElementById('shootingArea');
+            const player = document.getElementById('player');
+            const bullet = document.createElement('div');
+            bullet.className = 'bullet';
+            
+            const playerRect = player.getBoundingClientRect();
+            const shootingRect = shootingArea.getBoundingClientRect();
+            const bulletX = playerRect.left - shootingRect.left + 16; // プレイヤーの中心
+            
+            bullet.style.left = bulletX + 'px';
+            bullet.style.bottom = '50px';
+            
+            shootingArea.appendChild(bullet);
+            
+            const bulletInterval = setInterval(() => {
+                const currentBottom = parseInt(bullet.style.bottom);
+                if (currentBottom > shootingArea.offsetHeight || timeRemaining <= 0) {
+                    if (bullet.parentNode) {
+                        bullet.remove();
+                    }
+                    clearInterval(bulletInterval);
+                } else {
+                    bullet.style.bottom = (currentBottom + bulletSpeed) + 'px';
+                    checkCollision(bullet, bulletInterval);
+                }
+            }, 20);
+        }
+
+        // 衝突判定
+        function checkCollision(bullet, bulletInterval) {
+            const bulletRect = bullet.getBoundingClientRect();
+            const numbers = document.querySelectorAll('.falling-number');
+            
+            numbers.forEach(number => {
+                const numberRect = number.getBoundingClientRect();
+                
+                if (bulletRect.left < numberRect.right &&
+                    bulletRect.right > numberRect.left &&
+                    bulletRect.top < numberRect.bottom &&
+                    bulletRect.bottom > numberRect.top) {
+                    
+                    const value = parseInt(number.dataset.value);
+                    
+                    if (targetNumbers.includes(value)) {
+                        gameScore += 100;
+                        if (!hitTargets.includes(value)) {
+                            hitTargets.push(value);
+                        }
+                        
+                        // 全てのターゲットを撃った場合
+                        if (hitTargets.length === targetNumbers.length) {
+                            gameScore += 100; // ボーナス
+                            if (gameScore >= 1000) {
+                                gameScore = 1000; // パーフェクト
+                            }
+                            endShootingGame();
+                        }
+                    } else {
+                        // マイナス10点
+                        gameScore = Math.max(0, gameScore - 10);
+                    }
+                    
+                    updateGameScore();
+                    if (number.parentNode) {
+                        number.remove();
+                    }
+                    if (bullet.parentNode) {
+                        bullet.remove();
+                    }
+                    clearInterval(bulletInterval);
+                }
+            });
+        }
+
+        // スコア更新
+        function updateGameScore() {
+            document.getElementById('gameScore').textContent = `スコア: ${gameScore}`;
+        }
+
+        // シューティングゲーム終了
+        function endShootingGame() {
+            if (gameInterval) {
+                clearInterval(gameInterval);
+            }
+            if (gameTimer) {
+                clearInterval(gameTimer);
+            }
+            
+            setTimeout(() => {
+                let message = `ボーナスゲーム終了！\n最終スコア: ${gameScore}ポイント`;
+                if (hitTargets.length === targetNumbers.length) {
+                    message += '\n🎉 全ターゲット撃破！';
+                }
+                if (gameScore >= 1000) {
+                    message += '\n✨ パーフェクト！';
+                }
+                alert(message);
+                goHome();
+            }, 1000);
+        }
+
+        // ホームに戻る
+        function goHome() {
+            document.getElementById('gameArea').classList.remove('active');
+            document.getElementById('shootingGame').classList.remove('active');
+            document.getElementById('bonusStart').classList.remove('active');
+            document.getElementById('modeSelection').classList.add('active');
+            
+            // シューティングゲームのクリーンアップ
+            if (gameInterval) {
+                clearInterval(gameInterval);
+                gameInterval = null;
+            }
+            if (gameTimer) {
+                clearInterval(gameTimer);
+                gameTimer = null;
+            }
+            
+            const shootingArea = document.getElementById('shootingArea');
+            if (shootingArea) {
+                shootingArea.querySelectorAll('.falling-number, .bullet').forEach(el => {
+                    if (el.parentNode) {
+                        el.remove();
+                    }
+                });
+            }
+        }
+
+        // キーイベントの処理
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            
+            // ゲーム画面でのエンターキー
+            if (e.key === 'Enter' && document.getElementById('gameArea').classList.contains('active')) {
+                checkAnswer();
+            }
+            
+            // ボーナス開始画面でのエンターキー
+            if (e.key === 'Enter' && document.getElementById('bonusStart').classList.contains('active')) {
+                startBonusGame();
+            }
+            
+            // シューティングゲームでの発射
+            if ((e.key === ' ' || e.key === 'Enter') && document.getElementById('shootingGame').classList.contains('active')) {
+                e.preventDefault();
+                if (timeRemaining > 0) {
+                    fireBullet();
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // 初期化
+        createStars();
+    </script>
+</body>
+</html>
