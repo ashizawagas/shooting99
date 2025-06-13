@@ -476,9 +476,10 @@
         let gameTimer;
         let timeRemaining = 30;
         let bulletSpeed = 5;
-        let numberSpeed = 1.8; // 10%遅く設定
-        let playerPosition = 50; // プレイヤーの位置（パーセント）
-        let keys = {}; // キー入力状態を管理
+        let numberSpeed = 1.8;
+        let playerPosition = 50;
+        let keys = {};
+        let shootingAreaWidth = 0;
 
         // 星の背景を生成
         function createStars() {
@@ -505,7 +506,6 @@
                 currentQuestion = 1;
                 totalQuestions = 9;
             } else {
-                // ランダムモードは2～9の段のみ（1の段を除く）
                 currentTable = Math.floor(Math.random() * 8) + 2;
                 generateRandomQuestions();
                 currentQuestion = 0;
@@ -523,14 +523,13 @@
             for (let i = 1; i <= 9; i++) {
                 randomQuestions.push(i);
             }
-            // シャッフル
             for (let i = randomQuestions.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [randomQuestions[i], randomQuestions[j]] = [randomQuestions[j], randomQuestions[i]];
             }
         }
 
-        // 乗数を取得（エラー修正）
+        // 乗数を取得
         function getMultiplier() {
             if (currentMode === 'sequential') {
                 if (currentQuestion >= 1 && currentQuestion <= 9) {
@@ -636,13 +635,11 @@
             document.getElementById('gameArea').classList.remove('active');
             document.getElementById('bonusStart').classList.add('active');
             
-            // ターゲット数字を生成（選んだ段の答え）
             targetNumbers = [];
             for (let i = 1; i <= 9; i++) {
                 targetNumbers.push(currentTable * i);
             }
             
-            // 詳細な説明を表示
             const instructionsElement = document.getElementById('bonusInstructions');
             instructionsElement.innerHTML = `
                 <strong>${currentTable}の段の数字にあてると100点、その段のすべての数字をあてるとボーナスでさらに100点入るよ。<br>
@@ -661,7 +658,9 @@
             timeRemaining = 30;
             playerPosition = 50;
             
-            // 詳細な説明を表示
+            const shootingArea = document.getElementById('shootingArea');
+            shootingAreaWidth = shootingArea.offsetWidth;
+            
             const instructionsElement = document.getElementById('gameInstructions');
             instructionsElement.innerHTML = `
                 <strong>${currentTable}の段の数字にあてると100点、その段のすべての数字をあてるとボーナスでさらに100点入るよ。<br>
@@ -674,7 +673,6 @@
             startFallingNumbers();
             setupShooting();
             
-            // 30秒でゲーム終了
             gameTimer = setInterval(() => {
                 timeRemaining--;
                 updateTimer();
@@ -684,13 +682,17 @@
             }, 1000);
         }
 
-        // プレイヤーの位置を更新
+        // プレイヤーの位置を更新（修正版）
         function updatePlayerPosition() {
             const player = document.getElementById('player');
             const shootingArea = document.getElementById('shootingArea');
-            const maxLeft = shootingArea.offsetWidth - 40;
-            const leftPos = (playerPosition / 100) * maxLeft;
+            
+            const playerWidth = 40;
+            const maxPosition = shootingArea.offsetWidth - playerWidth;
+            const leftPos = Math.max(0, Math.min(maxPosition, (playerPosition / 100) * shootingArea.offsetWidth - playerWidth / 2));
+            
             player.style.left = leftPos + 'px';
+            player.style.transform = 'none';
         }
 
         // タイマー更新
@@ -701,13 +703,12 @@
         // 落下する数字を開始
         function startFallingNumbers() {
             let targetIndex = 0;
-            let targetInterval = 30000 / 9; // 30秒で9個のターゲットを確実に出現
+            let targetInterval = 30000 / 9;
             
             gameInterval = setInterval(() => {
                 createFallingNumber();
             }, 800);
             
-            // ターゲット数字を確実に出現させる
             const targetTimer = setInterval(() => {
                 if (targetIndex < targetNumbers.length && timeRemaining > 0) {
                     createTargetNumber(targetNumbers[targetIndex]);
@@ -718,7 +719,7 @@
             }, targetInterval);
         }
 
-        // 通常の落下する数字を作成
+        // 通常の落下する数字を作成（修正版）
         function createFallingNumber() {
             if (timeRemaining <= 0) return;
             
@@ -726,7 +727,6 @@
             const number = document.createElement('div');
             number.className = 'falling-number';
             
-            // 1-81のランダムな数字（ターゲット以外）
             let randomNum;
             do {
                 randomNum = Math.floor(Math.random() * 81) + 1;
@@ -735,15 +735,17 @@
             number.textContent = randomNum;
             number.dataset.value = randomNum;
             
-            // すべて同じレイアウト
-            number.style.left = Math.random() * (shootingArea.offsetWidth - 30) + 'px';
+            // 数字の幅（30px）を考慮した落下位置を設定
+            const numberWidth = 30;
+            const maxLeft = shootingArea.offsetWidth - numberWidth;
+            number.style.left = Math.random() * maxLeft + 'px';
             number.style.top = '0px';
             
             shootingArea.appendChild(number);
             animateFallingNumber(number);
         }
 
-        // ターゲット数字を作成
+        // ターゲット数字を作成（修正版）
         function createTargetNumber(targetNum) {
             if (timeRemaining <= 0) return;
             
@@ -753,8 +755,10 @@
             number.textContent = targetNum;
             number.dataset.value = targetNum;
             
-            // すべて同じレイアウト
-            number.style.left = Math.random() * (shootingArea.offsetWidth - 30) + 'px';
+            // 数字の幅（30px）を考慮した落下位置を設定
+            const numberWidth = 30;
+            const maxLeft = shootingArea.offsetWidth - numberWidth;
+            number.style.left = Math.random() * maxLeft + 'px';
             number.style.top = '0px';
             
             shootingArea.appendChild(number);
@@ -778,19 +782,16 @@
             }, 20);
         }
 
-        // 射撃システム設定
+        // 射撃システム設定（修正版）
         function setupShooting() {
             const shootingArea = document.getElementById('shootingArea');
             
             // タッチイベント
-            let touchStartX = 0;
-            
             shootingArea.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                touchStartX = e.touches[0].clientX;
                 const rect = shootingArea.getBoundingClientRect();
                 const x = e.touches[0].clientX - rect.left;
-                playerPosition = Math.max(0, Math.min(100, (x / shootingArea.offsetWidth) * 100));
+                playerPosition = Math.max(5, Math.min(95, (x / shootingArea.offsetWidth) * 100));
                 updatePlayerPosition();
             });
             
@@ -798,7 +799,7 @@
                 e.preventDefault();
                 const rect = shootingArea.getBoundingClientRect();
                 const x = e.touches[0].clientX - rect.left;
-                playerPosition = Math.max(0, Math.min(100, (x / shootingArea.offsetWidth) * 100));
+                playerPosition = Math.max(5, Math.min(95, (x / shootingArea.offsetWidth) * 100));
                 updatePlayerPosition();
             });
             
@@ -807,11 +808,11 @@
                 fireBullet();
             });
             
-            // マウスイベント（既存）
+            // マウスイベント（修正版）
             shootingArea.addEventListener('mousemove', (e) => {
                 const rect = shootingArea.getBoundingClientRect();
                 const x = e.clientX - rect.left;
-                playerPosition = Math.max(0, Math.min(100, (x / shootingArea.offsetWidth) * 100));
+                playerPosition = Math.max(5, Math.min(95, (x / shootingArea.offsetWidth) * 100));
                 updatePlayerPosition();
             });
             
@@ -821,7 +822,7 @@
                 }
             });
             
-            // キー移動の処理
+            // キー移動の処理（修正版）
             const moveInterval = setInterval(() => {
                 if (timeRemaining <= 0) {
                     clearInterval(moveInterval);
@@ -829,17 +830,17 @@
                 }
                 
                 if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
-                    playerPosition = Math.max(0, playerPosition - 2);
+                    playerPosition = Math.max(5, playerPosition - 2);
                     updatePlayerPosition();
                 }
                 if (keys['ArrowRight'] || keys['d'] || keys['D']) {
-                    playerPosition = Math.min(100, playerPosition + 2);
+                    playerPosition = Math.min(95, playerPosition + 2);
                     updatePlayerPosition();
                 }
-            }, 16); // 60FPS
+            }, 16);
         }
 
-        // 弾を発射
+        // 弾を発射（修正版）
         function fireBullet() {
             const shootingArea = document.getElementById('shootingArea');
             const player = document.getElementById('player');
@@ -848,7 +849,7 @@
             
             const playerRect = player.getBoundingClientRect();
             const shootingRect = shootingArea.getBoundingClientRect();
-            const bulletX = playerRect.left - shootingRect.left + 16; // プレイヤーの中心
+            const bulletX = playerRect.left - shootingRect.left + 16;
             
             bullet.style.left = bulletX + 'px';
             bullet.style.bottom = '50px';
@@ -864,17 +865,21 @@
                     clearInterval(bulletInterval);
                 } else {
                     bullet.style.bottom = (currentBottom + bulletSpeed) + 'px';
-                    checkCollision(bullet, bulletInterval);
+                    
+                    if (checkCollision(bullet, bulletInterval)) {
+                        clearInterval(bulletInterval);
+                    }
                 }
             }, 20);
         }
 
-        // 衝突判定
+        // 衝突判定（修正版）
         function checkCollision(bullet, bulletInterval) {
             const bulletRect = bullet.getBoundingClientRect();
             const numbers = document.querySelectorAll('.falling-number');
             
-            numbers.forEach(number => {
+            for (let i = 0; i < numbers.length; i++) {
+                const number = numbers[i];
                 const numberRect = number.getBoundingClientRect();
                 
                 if (bulletRect.left < numberRect.right &&
@@ -890,16 +895,14 @@
                             hitTargets.push(value);
                         }
                         
-                        // 全てのターゲットを撃った場合
                         if (hitTargets.length === targetNumbers.length) {
-                            gameScore += 100; // ボーナス
+                            gameScore += 100;
                             if (gameScore >= 1000) {
-                                gameScore = 1000; // パーフェクト
+                                gameScore = 1000;
                             }
                             endShootingGame();
                         }
                     } else {
-                        // マイナス10点
                         gameScore = Math.max(0, gameScore - 10);
                     }
                     
@@ -910,9 +913,12 @@
                     if (bullet.parentNode) {
                         bullet.remove();
                     }
-                    clearInterval(bulletInterval);
+                    
+                    return true;
                 }
-            });
+            }
+            
+            return false;
         }
 
         // スコア更新
@@ -949,7 +955,6 @@
             document.getElementById('bonusStart').classList.remove('active');
             document.getElementById('modeSelection').classList.add('active');
             
-            // シューティングゲームのクリーンアップ
             if (gameInterval) {
                 clearInterval(gameInterval);
                 gameInterval = null;
@@ -973,17 +978,14 @@
         document.addEventListener('keydown', (e) => {
             keys[e.key] = true;
             
-            // ゲーム画面でのエンターキー
             if (e.key === 'Enter' && document.getElementById('gameArea').classList.contains('active')) {
                 checkAnswer();
             }
             
-            // ボーナス開始画面でのエンターキー
             if (e.key === 'Enter' && document.getElementById('bonusStart').classList.contains('active')) {
                 startBonusGame();
             }
             
-            // シューティングゲームでの発射
             if ((e.key === ' ' || e.key === 'Enter') && document.getElementById('shootingGame').classList.contains('active')) {
                 e.preventDefault();
                 if (timeRemaining > 0) {
