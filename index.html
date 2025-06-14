@@ -109,7 +109,7 @@
         }
 
         .mode-btn {
-            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            background: linear-gradient(45deg, #4ecdc4, #7dd3c0);
             color: white;
             border: none;
             padding: 20px 40px;
@@ -125,14 +125,6 @@
         .mode-btn:hover {
             transform: translateY(-5px);
             box-shadow: 0 15px 25px rgba(0,0,0,0.3);
-            background: linear-gradient(45deg, #ff8e8e, #ffb3b3);
-        }
-
-        .mode-btn.random {
-            background: linear-gradient(45deg, #4ecdc4, #7dd3c0);
-        }
-
-        .mode-btn.random:hover {
             background: linear-gradient(45deg, #7dd3c0, #a8e6cf);
         }
 
@@ -391,12 +383,7 @@
         
         <!-- モード選択画面 -->
         <div class="mode-selection active" id="modeSelection">
-            <p style="font-size: 1.2em; margin-bottom: 30px; color: #666;">どのモードで遊ぶ？</p>
-            
-            <div class="mode-description">
-                <h3>📚 順番モード</h3>
-                <p>ランダムに選ばれた段の×1から×9まで順番に出題されます。全問正解でクリア！</p>
-            </div>
+            <p style="font-size: 1.2em; margin-bottom: 30px; color: #666;">ランダムモードで遊ぼう！</p>
             
             <div class="mode-description">
                 <h3>🎲 ランダムモード</h3>
@@ -404,11 +391,10 @@
             </div>
             
             <div class="bonus-info">
-                🎯 ランダムモードでクリアするとボーナスゲームがあるよ！
+                🎯 クリアするとボーナスゲームがあるよ！
             </div>
             
-            <button class="mode-btn" onclick="startGame('sequential')">📚 順番モード</button>
-            <button class="mode-btn random" onclick="startGame('random')">🎲 ランダムモード</button>
+            <button class="mode-btn" onclick="startGame('random')">🎲 ゲーム開始</button>
         </div>
 
         <!-- ゲーム画面 -->
@@ -471,8 +457,6 @@
         let randomQuestions = [];
         let gameScore = 0;
         let targetNumbers = [];
-        let hitTargets = [];
-        let gameInterval;
         let gameTimer;
         let timeRemaining = 30;
         let bulletSpeed = 5;
@@ -480,6 +464,9 @@
         let playerPosition = 50;
         let keys = {};
         let shootingAreaWidth = 0;
+        let targetInterval;
+        let otherInterval;
+        let bullets = [];
 
         // 星の背景を生成
         function createStars() {
@@ -501,16 +488,10 @@
             document.getElementById('modeSelection').classList.remove('active');
             document.getElementById('gameArea').classList.add('active');
             
-            if (mode === 'sequential') {
-                currentTable = Math.floor(Math.random() * 9) + 1;
-                currentQuestion = 1;
-                totalQuestions = 9;
-            } else {
-                currentTable = Math.floor(Math.random() * 8) + 2;
-                generateRandomQuestions();
-                currentQuestion = 0;
-                totalQuestions = 9;
-            }
+            currentTable = Math.floor(Math.random() * 8) + 2;
+            generateRandomQuestions();
+            currentQuestion = 0;
+            totalQuestions = 9;
             
             correctAnswers = 0;
             updateQuestion();
@@ -531,14 +512,8 @@
 
         // 乗数を取得
         function getMultiplier() {
-            if (currentMode === 'sequential') {
-                if (currentQuestion >= 1 && currentQuestion <= 9) {
-                    return currentQuestion;
-                }
-            } else if (currentMode === 'random') {
-                if (currentQuestion >= 0 && currentQuestion < randomQuestions.length) {
-                    return randomQuestions[currentQuestion];
-                }
+            if (currentQuestion >= 0 && currentQuestion < randomQuestions.length) {
+                return randomQuestions[currentQuestion];
             }
             return null;
         }
@@ -590,14 +565,9 @@
 
         // 次の問題
         function nextQuestion() {
-            if (currentMode === 'sequential') {
-                currentQuestion++;
-            } else {
-                currentQuestion++;
-            }
+            currentQuestion++;
             
-            if ((currentMode === 'sequential' && currentQuestion > totalQuestions) ||
-                (currentMode === 'random' && currentQuestion >= totalQuestions)) {
+            if (currentQuestion >= totalQuestions) {
                 endGame();
             } else {
                 updateQuestion();
@@ -609,20 +579,14 @@
 
         // 進捗更新
         function updateProgress() {
-            let progress;
-            if (currentMode === 'sequential') {
-                progress = (currentQuestion - 1) / totalQuestions * 100;
-                document.getElementById('progressText').textContent = `問題 ${currentQuestion} / ${totalQuestions}`;
-            } else {
-                progress = currentQuestion / totalQuestions * 100;
-                document.getElementById('progressText').textContent = `問題 ${currentQuestion + 1} / ${totalQuestions}`;
-            }
+            const progress = currentQuestion / totalQuestions * 100;
+            document.getElementById('progressText').textContent = `問題 ${currentQuestion + 1} / ${totalQuestions}`;
             document.getElementById('progressBar').style.width = progress + '%';
         }
 
         // ゲーム終了
         function endGame() {
-            if (correctAnswers === totalQuestions && currentMode === 'random') {
+            if (correctAnswers === totalQuestions) {
                 showBonusStart();
             } else {
                 alert(`ゲーム終了！\n正解数: ${correctAnswers} / ${totalQuestions}`);
@@ -642,9 +606,8 @@
             
             const instructionsElement = document.getElementById('bonusInstructions');
             instructionsElement.innerHTML = `
-                <strong>${currentTable}の段の数字にあてると100点、その段のすべての数字をあてるとボーナスでさらに100点入るよ。<br>
-                ${currentTable}の段以外の数字にあてるとマイナス10点だよ</strong><br><br>
-                <span style="color: #666;">制限時間は30秒です。準備ができたらボタンを押してください！</span>
+                <strong>${currentTable}の段の数字にあてると10点、その他の数字にあてるとマイナス5点だよ</strong><br><br>
+                <span style="color: #666;">制限時間は30秒です。${currentTable}の段の数字は20個、その他の数字は60個落ちてきます。</span>
             `;
         }
 
@@ -654,17 +617,16 @@
             document.getElementById('shootingGame').classList.add('active');
             
             gameScore = 0;
-            hitTargets = [];
             timeRemaining = 30;
             playerPosition = 50;
+            bullets = [];
             
             const shootingArea = document.getElementById('shootingArea');
             shootingAreaWidth = shootingArea.offsetWidth;
             
             const instructionsElement = document.getElementById('gameInstructions');
             instructionsElement.innerHTML = `
-                <strong>${currentTable}の段の数字にあてると100点、その段のすべての数字をあてるとボーナスでさらに100点入るよ。<br>
-                ${currentTable}の段以外の数字にあてるとマイナス10点だよ</strong>
+                <strong>${currentTable}の段の数字にあてると10点、その他の数字にあてるとマイナス5点だよ</strong>
             `;
             
             updateGameScore();
@@ -682,7 +644,7 @@
             }, 1000);
         }
 
-        // プレイヤーの位置を更新（修正版）
+        // プレイヤーの位置を更新
         function updatePlayerPosition() {
             const player = document.getElementById('player');
             const shootingArea = document.getElementById('shootingArea');
@@ -702,25 +664,45 @@
 
         // 落下する数字を開始
         function startFallingNumbers() {
-            let targetIndex = 0;
-            let targetInterval = 30000 / 9;
-            
-            gameInterval = setInterval(() => {
-                createFallingNumber();
-            }, 800);
-            
-            const targetTimer = setInterval(() => {
-                if (targetIndex < targetNumbers.length && timeRemaining > 0) {
-                    createTargetNumber(targetNumbers[targetIndex]);
-                    targetIndex++;
-                } else {
-                    clearInterval(targetTimer);
+            // ターゲット数字（30秒で20個 = 1.5秒間隔）
+            targetInterval = setInterval(() => {
+                if (timeRemaining > 0) {
+                    createTargetNumber();
                 }
-            }, targetInterval);
+            }, 1500);
+            
+            // その他の数字（30秒で60個 = 0.5秒間隔）
+            otherInterval = setInterval(() => {
+                if (timeRemaining > 0) {
+                    createOtherNumber();
+                }
+            }, 500);
         }
 
-        // 通常の落下する数字を作成（修正版）
-        function createFallingNumber() {
+        // ターゲット数字を作成
+        function createTargetNumber() {
+            if (timeRemaining <= 0) return;
+            
+            const shootingArea = document.getElementById('shootingArea');
+            const number = document.createElement('div');
+            number.className = 'falling-number';
+            
+            const targetNum = targetNumbers[Math.floor(Math.random() * targetNumbers.length)];
+            number.textContent = targetNum;
+            number.dataset.value = targetNum;
+            number.dataset.isTarget = 'true';
+            
+            const numberWidth = 30;
+            const maxLeft = shootingArea.offsetWidth - numberWidth;
+            number.style.left = Math.random() * maxLeft + 'px';
+            number.style.top = '0px';
+            
+            shootingArea.appendChild(number);
+            animateFallingNumber(number);
+        }
+
+        // その他の数字を作成
+        function createOtherNumber() {
             if (timeRemaining <= 0) return;
             
             const shootingArea = document.getElementById('shootingArea');
@@ -734,28 +716,8 @@
             
             number.textContent = randomNum;
             number.dataset.value = randomNum;
+            number.dataset.isTarget = 'false';
             
-            // 数字の幅（30px）を考慮した落下位置を設定
-            const numberWidth = 30;
-            const maxLeft = shootingArea.offsetWidth - numberWidth;
-            number.style.left = Math.random() * maxLeft + 'px';
-            number.style.top = '0px';
-            
-            shootingArea.appendChild(number);
-            animateFallingNumber(number);
-        }
-
-        // ターゲット数字を作成（修正版）
-        function createTargetNumber(targetNum) {
-            if (timeRemaining <= 0) return;
-            
-            const shootingArea = document.getElementById('shootingArea');
-            const number = document.createElement('div');
-            number.className = 'falling-number';
-            number.textContent = targetNum;
-            number.dataset.value = targetNum;
-            
-            // 数字の幅（30px）を考慮した落下位置を設定
             const numberWidth = 30;
             const maxLeft = shootingArea.offsetWidth - numberWidth;
             number.style.left = Math.random() * maxLeft + 'px';
@@ -782,7 +744,7 @@
             }, 20);
         }
 
-        // 射撃システム設定（修正版）
+        // 射撃システム設定
         function setupShooting() {
             const shootingArea = document.getElementById('shootingArea');
             
@@ -808,7 +770,7 @@
                 fireBullet();
             });
             
-            // マウスイベント（修正版）
+            // マウスイベント
             shootingArea.addEventListener('mousemove', (e) => {
                 const rect = shootingArea.getBoundingClientRect();
                 const x = e.clientX - rect.left;
@@ -822,7 +784,7 @@
                 }
             });
             
-            // キー移動の処理（修正版）
+            // キー移動の処理
             const moveInterval = setInterval(() => {
                 if (timeRemaining <= 0) {
                     clearInterval(moveInterval);
@@ -840,7 +802,7 @@
             }, 16);
         }
 
-        // 弾を発射（修正版）
+        // 弾を発射
         function fireBullet() {
             const shootingArea = document.getElementById('shootingArea');
             const player = document.getElementById('player');
@@ -855,12 +817,17 @@
             bullet.style.bottom = '50px';
             
             shootingArea.appendChild(bullet);
+            bullets.push(bullet);
             
             const bulletInterval = setInterval(() => {
                 const currentBottom = parseInt(bullet.style.bottom);
                 if (currentBottom > shootingArea.offsetHeight || timeRemaining <= 0) {
                     if (bullet.parentNode) {
                         bullet.remove();
+                    }
+                    const bulletIndex = bullets.indexOf(bullet);
+                    if (bulletIndex > -1) {
+                        bullets.splice(bulletIndex, 1);
                     }
                     clearInterval(bulletInterval);
                 } else {
@@ -873,7 +840,7 @@
             }, 20);
         }
 
-        // 衝突判定（修正版）
+        // 衝突判定
         function checkCollision(bullet, bulletInterval) {
             const bulletRect = bullet.getBoundingClientRect();
             const numbers = document.querySelectorAll('.falling-number');
@@ -888,30 +855,28 @@
                     bulletRect.bottom > numberRect.top) {
                     
                     const value = parseInt(number.dataset.value);
+                    const isTarget = number.dataset.isTarget === 'true';
                     
-                    if (targetNumbers.includes(value)) {
-                        gameScore += 100;
-                        if (!hitTargets.includes(value)) {
-                            hitTargets.push(value);
-                        }
-                        
-                        if (hitTargets.length === targetNumbers.length) {
-                            gameScore += 100;
-                            if (gameScore >= 1000) {
-                                gameScore = 1000;
-                            }
-                            endShootingGame();
-                        }
+                    if (isTarget) {
+                        gameScore += 10;
                     } else {
-                        gameScore = Math.max(0, gameScore - 10);
+                        gameScore = Math.max(0, gameScore - 5);
                     }
                     
                     updateGameScore();
+                    
+                    // 弾と数字を削除
                     if (number.parentNode) {
                         number.remove();
                     }
                     if (bullet.parentNode) {
                         bullet.remove();
+                    }
+                    
+                    // 弾を配列から削除
+                    const bulletIndex = bullets.indexOf(bullet);
+                    if (bulletIndex > -1) {
+                        bullets.splice(bulletIndex, 1);
                     }
                     
                     return true;
@@ -928,8 +893,11 @@
 
         // シューティングゲーム終了
         function endShootingGame() {
-            if (gameInterval) {
-                clearInterval(gameInterval);
+            if (targetInterval) {
+                clearInterval(targetInterval);
+            }
+            if (otherInterval) {
+                clearInterval(otherInterval);
             }
             if (gameTimer) {
                 clearInterval(gameTimer);
@@ -937,12 +905,6 @@
             
             setTimeout(() => {
                 let message = `ボーナスゲーム終了！\n最終スコア: ${gameScore}ポイント`;
-                if (hitTargets.length === targetNumbers.length) {
-                    message += '\n🎉 全ターゲット撃破！';
-                }
-                if (gameScore >= 1000) {
-                    message += '\n✨ パーフェクト！';
-                }
                 alert(message);
                 goHome();
             }, 1000);
@@ -955,14 +917,20 @@
             document.getElementById('bonusStart').classList.remove('active');
             document.getElementById('modeSelection').classList.add('active');
             
-            if (gameInterval) {
-                clearInterval(gameInterval);
-                gameInterval = null;
+            if (targetInterval) {
+                clearInterval(targetInterval);
+                targetInterval = null;
+            }
+            if (otherInterval) {
+                clearInterval(otherInterval);
+                otherInterval = null;
             }
             if (gameTimer) {
                 clearInterval(gameTimer);
                 gameTimer = null;
             }
+            
+            bullets = [];
             
             const shootingArea = document.getElementById('shootingArea');
             if (shootingArea) {
